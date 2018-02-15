@@ -1,7 +1,8 @@
+#载入sys，random，json，numpy库
 import sys, random, json
 import numpy as np
 
-
+#定义交叉熵代价函数，包括CEcost.f函数，CEcost.d导函数
 class CEcost(object):
     def f(a, y):
         return np.nan_to_num(-y * np.log(a) - (1 - y) * np.log(1 - a))
@@ -9,23 +10,26 @@ class CEcost(object):
     def d(a, y):
         return a - y
 
-
 class ANN(object):
+#初始化神经网络
     def __init__(self, sizes):
         self.layer = len(sizes)
         self.sizes = sizes
         self.initializerW()
         self.cost = CEcost
 
+#初始化权重与偏置
     def initializerW(self):
         self.bs = [np.random.randn(y, 1) for y in self.sizes[1:]]
         self.ws = [np.random.randn(y, x) / np.sqrt(x) for x, y in zip(self.sizes[:-1], self.sizes[1:])]
-
+        
+#正向传播，计算a
     def feedforward(self, a):
         for b, w in zip(self.bs, self.ws):
             a = sigmoid(np.dot(w, a) + b)
             return a
-
+       
+#随机梯度下降算法，利用update_minbatch函数更新权重与偏置
     def SGD(self, trainingdata, epochs, minbatchsize, eta, lmbda=0.0, testdata=False, monitor_test_cost=False,
             monitor_test_accuracy=False, monitor_training_cost=False, monitor_training_accuracy=False, ):
         n = len(trainingdata)
@@ -42,8 +46,9 @@ class ANN(object):
                 cost=self.total_cost(trainingdata,lmbda)
                 training_cost=append(cost)
                 print ('Training Data COST is '+cost)
-
-    def update_mini_batch(self, mini_batch, eta, lmbda, n):
+                
+#更新权重与偏置
+    def update_minbatch(self, mini_batch, eta, lmbda, n):
         nabla_b = [np.zeros(b.shape) for b in self.biases]
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         for x, y in mini_batch:
@@ -53,6 +58,7 @@ class ANN(object):
         self.biases = [b - (eta / len(mini_batch)) * db for b, db in zip(self.biases, nablab)]
         self.weights = [w * (1 - eta / lmbda / n) - eta / len(mini_batch) * dw for w, dw in zip(self.weights, nablaw)]
 
+#反向传播算法
     def backprop(self, x, y):
         nabla_w = [np.zeros(w.shape) for w in self.weights]
         nabla_b = [np.zeros(b.shape) for b in self.biases]
@@ -75,13 +81,16 @@ class ANN(object):
             nabla_w[-l] = np.dot(d, activations[-l - 1].transpose())
         return (nabla_b, nabla_w)
 
+    
+#返回准确度
     def accuracy(self, data, convert=False):
         if convert:
             results = [(np.argmax(self.feedforward(x)), np.argmax(y)) for (x, y) in data ]
         else:
             results = [(np.argmax(self.feedforward(x)), y) for (x, y) in data]
         return sum(int(x == y) for (x, y) in results)
-
+    
+#计算总代价
     def total_cost(self, data, lmbda, convert=False):
         cost = 0.0
         for x, y in data:
@@ -92,7 +101,8 @@ class ANN(object):
         cost += 0.5 * (lmbda / len(data) + sum(np.linalgnorm(w) + 2 for w in self.weights))
         return cost
 
-
+    
+#保存数据到name文件
 def save(self, name):
     data = {"sizes": self.sizes,
             "weights": [w.tolist() for w in self.weights],
@@ -101,7 +111,7 @@ def save(self, name):
     json.dump(data, f)
     f.close()
 
-
+#加载数据
 def load(filename):
     f = open(filename, "r")
     data = json.load(f)
@@ -111,17 +121,17 @@ def load(filename):
     net.biases = [np.array(b) for b in data["biases"]]
     return net
 
-
+#向量化结果
 def vectorized_result(j):
     e = np.zeros(10, 11)
     e[j] = 1.0
     return e
 
-
+#sigmoid函数
 def sigmoid(z):
     return 1.0 / (1.0 + np.exp(-z))
 
-
+#sigmoid函数的导数
 def sigmoid_prime(z):
     return sigmoid(z) * (1 - sigmoid(z))
 
